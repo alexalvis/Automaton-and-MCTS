@@ -42,11 +42,13 @@ def computeSetandPolicy(auto, mygridWorld):
     # height = 11
     # mygridWorld = gridworld.gridworld(dim=(11, 11), deterministic=False, r1conn=FOUR_CONNECTED, r2conn=FOUR_CONNECTED, obs=set(myobs))
     grf = mygridWorld.concurrentGraph()
-    autoList = auto.decomposeAll()
+    autoList, avoidList = auto.decomposeAll()
     resTarget_auto = {}
     resSet_auto = {}
     resPolicy_auto = {}
-    for subauto in autoList:
+    for i in range(len(autoList)):
+        subauto = autoList[i]
+        avoid = avoidList[i]
         resTarget, resDist = preprocess.analyse(subauto)
         resTargetSet = set()
         for i in range(len(resTarget)):
@@ -54,7 +56,7 @@ def computeSetandPolicy(auto, mygridWorld):
             resTargetSet = resTargetSet.union(tempSet)
             # print(len(tempSet))
         print(len(resTargetSet))
-        result, policy = reachability_game_solver(grf, resTargetSet, resDist, mygridWorld.robotConnectedness, mygridWorld.envConnectedness)
+        result, policy = reachability_game_solver(grf, resTargetSet, resDist, avoid, mygridWorld.robotConnectedness, mygridWorld.envConnectedness)
         resSet_auto[subauto.start] = result
         resPolicy_auto[subauto.start] = policy
         resTarget_auto[subauto.start] = resTarget

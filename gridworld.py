@@ -6,13 +6,13 @@ import pickle
 
 # Default Actions
 NORTH = lambda st: (st[0] - 1, st[1])
-NORTH.__name__ = 'N'
+NORTH.__name__ = 'North'
 SOUTH = lambda st: (st[0] + 1, st[1])
-SOUTH.__name__ = 'S'
+SOUTH.__name__ = 'South'
 EAST = lambda st: (st[0], st[1] + 1)
-EAST.__name__ = 'E'
+EAST.__name__ = 'East'
 WEST = lambda st: (st[0], st[1] - 1)
-WEST.__name__ = 'W'
+WEST.__name__ = 'West'
 NORTHEAST = lambda st: (st[0] - 1, st[1] + 1)
 NORTHWEST = lambda st: (st[0] - 1, st[1] - 1)
 SOUTHEAST = lambda st: (st[0] + 1, st[1] + 1)

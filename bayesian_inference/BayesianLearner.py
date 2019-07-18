@@ -1,11 +1,13 @@
+import math
 import pickle
 from copy import deepcopy as dcp
 from itertools import product
 
-import math
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+
+from bayesian_inference.BayesianParam import BAYESIAN_INFERENCE
+from env_para import EnvPara
 
 
 def KL(P, Q):
@@ -18,33 +20,29 @@ def KL(P, Q):
 
 
 class BayesianLearner:
-    def __init__(self, filename="bayesian_inference/Bayesian_param.json"):
-        if filename is None:
-            print("Error! The file name cannot be Empty!!!")
-        json_data = pd.read_json(filename, typ='series')
-        self.Height = json_data.HEIGHT
-        self.Width = json_data.WIDTH
-        self.goals = json_data.GOALS
+    def __init__(self):
+        self.Height = BAYESIAN_INFERENCE.HEIGHT
+        self.Width = BAYESIAN_INFERENCE.WIDTH
+        self.goals = BAYESIAN_INFERENCE.GOALS
         self.size = [self.Height, self.Width]
         self.A = {"N": (-1, 0), "S": (1, 0), "W": (0, -1), "E": (0, 1)}
         self.A_full = {"North": (-1, 0), "South": (1, 0), "West": (0, -1), "East": (0, 1)}
         self.S = self.set_S()  # use list or set? should be in the form of (st1, st2)
-        self.obstacles = json_data.OBSTACLES  # should be a 2-D state, like (1,3) represent only agent 1
+        self.obstacles = BAYESIAN_INFERENCE.OBSTACLES  # should be a 2-D state, like (1,3) represent only agent 1
         self.R = self.get_R()  # range
-        self.epsilon1 = json_data.TRANSITION_PROB1
-        self.epsilon2 = json_data.TRANSITION_PROB2  # stochastic probability
-        self.gamma = json_data.GAMMA
+        self.epsilon1 = BAYESIAN_INFERENCE.TRANSITION_PROB1
+        self.epsilon2 = BAYESIAN_INFERENCE.TRANSITION_PROB2  # stochastic probability
+        self.gamma = BAYESIAN_INFERENCE.GAMMA
         self.threshold = 0.000001
         self.decoys = {}
-        self.memory = tuple(
-            ((json_data.INITIAL[0], json_data.INITIAL[1]), (json_data.INITIAL[2], json_data.INITIAL[3])))
+        self.memory = (EnvPara.I_contr, EnvPara.I_ad)
         self.true_goal = []
-        for i in range(len(json_data.Terminal)):
-            self.true_goal.append((json_data.Terminal[i][0], json_data.Terminal[i][1]))
-        self.distancethreshold = json_data.DISTANCETHRESHOLD
+        for i in range(len(BAYESIAN_INFERENCE.TERMINAL)):
+            self.true_goal.append((BAYESIAN_INFERENCE.TERMINAL[i][0], BAYESIAN_INFERENCE.TERMINAL[i][1]))
+        self.distancethreshold = BAYESIAN_INFERENCE.DISTANCETHRESHOLD
         self.goals_reward_value = 100
         self.catch = self.get_catch()
-        self.catch_reward = json_data.CATCHREWARD
+        self.catch_reward = BAYESIAN_INFERENCE.CATCHREWARD
 
         g = 'g'
         for i in range(len(self.goals)):
@@ -54,10 +52,8 @@ class BayesianLearner:
             # g_ctrl = tuple([self.goals[i][0], self.goals[i][1]])  ##agent1 自己的goal
             self.decoys[key].append(g_i)
 
-            # if g_i == g_ctrl:
-            #     self.true_goal.append(g_ctrl)
-
         self.init_decoys = dcp(self.decoys)
+
         self.P_g = {}
         for key in self.decoys:
             self.P_g[key] = 1 / len(self.decoys.keys())  ##initial belief of agent 2
@@ -93,8 +89,8 @@ class BayesianLearner:
         # pickle.dump(self.Probability_P1, picklefile)
         # picklefile.close()
         #
-        # # initialize the belief and the policy
-        # # the Policy of P1
+        # initialize the belief and the policy
+        # the Policy of P1
         # for decoy in self.Pi1_g.keys():
         #     self.Pi1_g[decoy] = self.get_Policy_P1(decoy,self.Probability_P1)
         #     self.P1_s_g[decoy] = self.get_Transition(decoy, self.Pi1_g[decoy], self.Probability_P1)
@@ -102,40 +98,39 @@ class BayesianLearner:
         # picklefile = open(filename_Pi1_g, "wb")
         # pickle.dump(self.Pi1_g, picklefile)
         # picklefile.close()
-        #
+
         # picklefile = open(filename_P1_s_g, "wb")
         # pickle.dump(self.P1_s_g, picklefile)
         # picklefile.close()
-        #
+
         # for decoy in self.decoys.keys():
         #     self.Probability_P2[decoy] = self.get_Probability_P2(decoy)
         #     self.reward_g_s_a2[decoy] = self.reward(decoy, self.Probability_P2[decoy])
-        #
+
         # picklefile = open(filename_Probability_P2, "wb")
         # pickle.dump(self.Probability_P2, picklefile)
         # picklefile.close()
-        #
+
         # picklefile = open(filename_reward_g_s_a2, "wb")
         # pickle.dump(self.reward_g_s_a2, picklefile)
         # picklefile.close()
-        #
+
         # for decoy in self.Pi2_g.keys():
         #     self.Pi2_g[decoy], self.Q[decoy] = self.get_Policy_P2(decoy, self.Probability_P2[decoy], self.reward_g_s_a2[decoy])
         #     self.P2_s_g[decoy] = self.get_Transition(decoy, self.Pi2_g[decoy], self.Probability_P2[decoy])
-        #
+
         # picklefile = open(filename_Pi2_g, "wb")
         # pickle.dump(self.Pi2_g, picklefile)
         # picklefile.close()
-        #
+
         # picklefile = open(filename_P2_s_g, "wb")
         # pickle.dump(self.P2_s_g, picklefile)
         # picklefile.close()
-        #
+
         # picklefile = open(filename_Q, "wb")
         # pickle.dump(self.Q, picklefile)
         # picklefile.close()
-
-
+        #
         # read file directly
         with open(filename_P_s1_a_s2, "rb") as f1:
             self.P_s1_a_s2 = pickle.load(f1)
@@ -181,7 +176,7 @@ class BayesianLearner:
         self.max_KL = KL([1, 0, 0, 0], [0, 1, 0, 0])
         # print("Bayesian initialize end")
 
-    ##reduce the decoy
+    ##reduce the decoy   ##2019.7.6 no more need in this version
     def reduce(self, decoy):
         self.P_h_g.pop(decoy)
         self.decoys.pop(decoy)
@@ -190,7 +185,7 @@ class BayesianLearner:
         temp_sum = sum(self.P_h_g.values())
         flag = False
         for goal in self.P_h_g.keys():
-            if self.P_h_g[goal] < 0.01:    ##here if one goal belief less than 0.01, it will do something like reset, dont know if this is correct
+            if self.P_h_g[goal] < 0.01:
                 flag = True
                 break
         normalize_flag = True
@@ -219,7 +214,6 @@ class BayesianLearner:
         self.P_h_g = dcp(self.P_g)
         self.ctrl_belief_P1 = dcp(self.init_ctrl_belief)
         self.decoys = dcp(self.init_decoys)
-
         for goals in self.decoys:
             if self.decoys[goals][0] in self.true_goal:
                 self.ctrl_belief_P1[goals] = 1.0
@@ -240,7 +234,7 @@ class BayesianLearner:
         # print("total number of states: ", len(inner))
         return inner
 
-    ##get the range the discrete agent should stay in, not used here
+    ##get the range the discrete agent should stay in
     def get_R(self):
         R = []
         height = self.Height
@@ -249,15 +243,14 @@ class BayesianLearner:
             R.append((p1, q1))
         return R
 
-    ##get the catch status, use manhattan distance, if change form, the concurrent game solver has to be changed together
     def get_catch(self):
         catch = []
         for state in self.S:
             s = tuple(state)
-            if s[0] not in self.true_goal:
-                if (abs(s[0][0] - s[1][0]) + abs(s[0][1] - s[1][1])) <= self.distancethreshold:
-                    catch.append(s)
+            if (abs(s[0][0] -s[1][0]) + abs(s[0][1] - s[1][1])) <= self.distancethreshold:
+                catch.append(s)
         return catch
+
     ##get the transition probability of each single agent
     def trans_P(self, state, id):
         A = self.A
@@ -351,13 +344,13 @@ class BayesianLearner:
                 P[state][(a1, a2)] = {}
                 for st1_ in Pro1[state][a1].keys():
                     for st2_ in Pro2[state][a2].keys():
-                        pro = Pro1[state][a1][st1_] * Pro2[state][a2][st2_]
-                        if pro != 0:
-                            P[state][(a1, a2)][(st1_, st2_)] = pro
+                        P[state][(a1, a2)][(st1_, st2_)] = Pro1[state][a1][st1_] * Pro2[state][a2][st2_]
         return P  ##here P is in the form of P[(st1,st2)][(a1,a2)][(st1_, st2_)]
 
     ##get the initial policy of P2, read from file
     def get_initialPolicy_P2(self):
+        # with open(filename, 'rb') as input:
+        #     Pi2 = pickle.load(input)
         Pi2 = {}
         for state in self.S:
             s = tuple(state)
@@ -365,6 +358,7 @@ class BayesianLearner:
                 Pi2[s] = {}
             for a in self.A:
                 Pi2[s][a] = 0.25
+
         return Pi2
 
     ##this is reward function, reference in draft
@@ -385,12 +379,9 @@ class BayesianLearner:
                         if s_ in self.catch:
                             reward_g_s_a2[s][a] += alfa * P[s][a][s_] * self.catch_reward  ##catch probability multiply catch reward
             else:
-                if s[0] in self.decoys[goals]:    ## agent1 is in goal, game over, agent1 win
-                    for a in A:
-                        reward_g_s_a2[s][a] = -self.goals_reward_value
-                else:
-                    for a in A:     ##agent1 is in obstacle, game over, agent2 win
-                        reward_g_s_a2[s][a] = self.catch_reward
+                for a in A:
+                    reward_g_s_a2[s][a] = -self.goals_reward_value
+
         return reward_g_s_a2  ## should be in the form of reward[state][a2]
 
     ##get_transfer probability of P1
@@ -419,7 +410,7 @@ class BayesianLearner:
                 for a_control in A:
                     if a_control not in control_Probability[state].keys():
                         control_Probability[state][a_control] = {}
-                    control_Probability[state][a_control][state] = 1.0           ##the state does not change
+                    control_Probability[state][a_control][state] = 1.0
         return control_Probability  ##should be in the form of P[state][action][state_], the state should be joint state, the action should be a single action, state_ should be
         # the joint state
 
@@ -454,7 +445,6 @@ class BayesianLearner:
     ##get the policy of P1, the optimal strategy is SSP
     def get_Policy_P1(self, goals, P, init=None):
         ##transform Dict to vector
-        print("goal is:" ,self.decoys[goals])
         def Dict2Vec(values, states):
             v = []
             for s in states:
@@ -535,7 +525,7 @@ class BayesianLearner:
                     if s not in Policy_P1:
                         Policy_P1[s] = {}
                         for a1 in A:
-                            Policy_P1[s][a1] = 0.0
+                            Policy_P1[s][a1] = 0.00001
             V_current, V_last = Dict2Vec(V, S), Dict2Vec(V_, S)
             print("it_count number is:", it_count)
             it_count += 1
@@ -549,7 +539,7 @@ class BayesianLearner:
     def get_Policy_P2(self, goals, P, reward, init=None):
         # transform dict to vector
         print("enter get_Policy_P2")
-        print("goal is:" ,self.decoys[goals])
+
         def Dict2Vec(values, states):
             v = []
             for s in states:
@@ -640,7 +630,7 @@ class BayesianLearner:
                     else:
                         V[s] = 0  ##sink state
                         for a in A:
-                            Policy_P2[s][a] = 0.0  ##need discussion
+                            Policy_P2[s][a] = 0.25  ##need discussion
             V_current, V_last = Dict2Vec(V, S), Dict2Vec(V_, S)
             print("it_count number:", it_count)
             it_count += 1
@@ -649,7 +639,10 @@ class BayesianLearner:
     ##get the transition probability
     def get_Transition(self, goals, Pi, P):
         T = {}
+        # Pi = self.Pi1_g[goals]
         S = self.S
+        # P = self.P_s1_a_s2
+
         for state in S:
             s = tuple(state)
             T[s] = {}
@@ -663,8 +656,23 @@ class BayesianLearner:
                 T[s][s] = 1.0
         return T  # in the form of T[state][state_], both are joint state
 
+    # def newP(self, last_s, s, a2):
+    #     Pro = {}
+    #     action1 = np.array(s[0]) - np.array(last_s[0])
+    #     action1 = tuple(action1)
+    #     for action in self.A:
+    #         if self.A[action] == action1:
+    #             a1 = action
+    #             break
+    #     for goals in self.decoys:
+    #         Pro[goals] = self.P_s1_a_s2[last_s][(a1, a2)][s] * self.Pi1_g[goals][last_s][a1]
+    #
+    #     return Pro
+
+
     # the bayesian inference
     def Bayesian_inference(self, traj, record_flag=False, display_flag=False):
+        self.total_KL = 0
         last_s = traj[0]
         flag = False
         # the state in traj should be joint state
@@ -675,9 +683,9 @@ class BayesianLearner:
                 continue
 
             # if the current state in the decoy, then reduce the decoy
-            for goal in self.decoys:
-                if s[0] in self.decoys[goal]:
-                    self.reduce(goal)
+            # for goal in self.decoys:
+            #     if s[0] in self.decoys[goal]:
+            #         self.reduce(goal)
 
             if display_flag:
                 print('------------------')
@@ -686,22 +694,50 @@ class BayesianLearner:
                     print('|belief at ', goals, ':', self.P_h_g[goals])
                 print('------------------')
 
+            # find the max value of the transition probability
+            action1 = np.array(s[0]) - np.array(last_s[0])
+            action1 = tuple(action1)
+            if action1 == (0, 0):
+                for action in self.A.keys():
+                    temp = tuple(np.array(last_s[0]) + np.array(self.A[action]))
+                    if temp not in self.R:
+                        act1 = action
+            else:
+                for action in self.A.keys():
+                    if self.A[action] == action1:
+                        act1 = action
+                        break
+
+            max_value = -1
             for goals in self.decoys:
                 try:
-                    self.P_h_g[goals] = min(max(self.P_h_g[goals] * self.P1_s_g[goals][last_s][s], 0.01), 0.99)
+                    if self.Pi1_g[goals][last_s][act1] > max_value:
+                        max_value = self.Pi1_g[goals][last_s][act1]
                 except KeyError:
-                    self.P_h_g[goals] = 0.0
+                    continue
 
-                if self.P1_s_g[goals][last_s][s] > 1:
-                    print("In bayesian Inference part existing P1_s_g larger than 1")
-            temp_sum = sum(self.P_h_g.values())
-            for goals in self.decoys:
-                self.P_h_g[goals] /= temp_sum
+            if max_value <= 0.001:
+                "Rest the value"
+                self.P_h_g = dcp(self.P_g)
+                last_s = s
+                self.total_KL += KL(list(self.P_h_g.values()), list(self.ctrl_belief_P1.values())) / self.max_KL
+            else:
+                for goals in self.decoys:
+                    try:
+                        self.P_h_g[goals] = self.P_h_g[goals] * self.Pi1_g[goals][last_s][act1]
+                    except KeyError:
+                        self.P_h_g[goals] = 0.0
 
-            last_s = s
+                temp_sum = sum(self.P_h_g.values())
+                for goals in self.decoys:
+                    self.P_h_g[goals] /= temp_sum
+
+                last_s = s
+                self.total_KL += KL(list(self.P_h_g.values()), list(self.ctrl_belief_P1.values())) / self.max_KL
 
         if record_flag:
             self.record.append(dcp(self.P_h_g))
+
 
     def semi_optimal_strategy(self, s):
         belief = self.P_h_g
@@ -807,27 +843,23 @@ class BayesianLearner:
 
 if __name__ == '__main__':
     print("enter main")
-    learner = BayesianLearner(filename='Bayesian_param.json')
+    learner = BayesianLearner()
     input("111")
     # start_time = time.time()
     # learner.reset()
     # end_time = time.time()
     # interval = end_time - start_time
     # print(interval)
-    # filename3 = "joint_traj.pkl"
-    # with open(filename3, "rb") as f3:
-    #     traj = pickle.load(f3)
+    filename3 = "joint_traj.pkl"
+    with open(filename3, "rb") as f3:
+        traj = pickle.load(f3)
     print(learner.decoys['g1'])
     print(learner.decoys['g2'])
     print(learner.decoys['g3'])
-    print(learner.decoys['g4'])
-    traj =  []
     print(traj)
     belief_1 = []
     belief_2 = []
     belief_3 = []
-    belief_4 = []
-    # traj = [((0, 5), (3, 7)), ((0, 6), (3, 8)), ((0, 7), (4, 8)), ((0, 7), (5, 8)), ((0, 7), (5, 9)), ((0, 7), (6, 9)), ((0, 8), (6, 10))]
     for element in traj[1:]:
         if not tuple(element) == learner.memory:
             learner.Bayesian_inference_one_shot(tuple(element), display_flag=True)
@@ -843,10 +875,6 @@ if __name__ == '__main__':
                 belief_3.append(learner.P_h_g['g3'])
             except KeyError as e:
                 print("g3 has been removed")
-            try:
-                belief_4.append(learner.P_h_g['g4'])
-            except KeyError as e:
-                print("g4 has been removed")
 
     # probability = learner.semi_optimal_strategy(tuple(element))
     # for a in learner.A:

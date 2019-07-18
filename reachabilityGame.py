@@ -3,7 +3,7 @@ import gridworld
 import productAuto
 import pickle
 
-def reachability_game_solver(g, W, dist, robotConn, envConn):
+def reachability_game_solver(g, W, dist, avoid, robotConn, envConn):
     """
     :param g: graph g
     :param W: the reachability region
@@ -11,15 +11,15 @@ def reachability_game_solver(g, W, dist, robotConn, envConn):
     """
     policy = {}
     W_formal = W
-    W_temp, policy = getPre_reachability(g, W, dist, robotConn, envConn, policy)
+    W_temp, policy = getPre_reachability(g, W, dist, avoid, robotConn, envConn, policy)
     W = W.union(W_temp)
     while W != W_formal:
         W_formal = W
-        W_temp, policy = getPre_reachability(g, W, dist, robotConn, envConn, policy)
+        W_temp, policy = getPre_reachability(g, W, dist, avoid, robotConn, envConn, policy)
         W = W.union(W_temp)
     return W, policy
 
-def getPre_reachability(g, W, dist, robotConn, envConn, policy):
+def getPre_reachability(g, W, dist, avoid, robotConn, envConn, policy):
     """
     :param g: graph g
     :param W: the reachability region
@@ -34,7 +34,7 @@ def getPre_reachability(g, W, dist, robotConn, envConn, policy):
         while True:
             try:
                 pre = next(predecessor)
-                if checkDist(pre,dist) == False or pre in W:
+                if checkDist(pre,dist) == False or pre in W or pre[0] in avoid:
                     continue
                 # nodeDict = GetDict_node(g, pre)
                 for action_r in robotConn:

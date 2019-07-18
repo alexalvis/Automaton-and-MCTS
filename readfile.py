@@ -1,7 +1,7 @@
 import pickle
 
-filename = "all_policies(1).pkl"
+filename = "pre_compute/autoalmostSurePolicy.pkl"
 with open(filename, "rb") as f1:
-    Policy = pickle.load(f1)
+    almostpolicy = pickle.load(f1)
 
-print(Policy[0])
+print(almostpolicy[1])

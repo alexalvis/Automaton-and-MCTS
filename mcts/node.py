@@ -7,7 +7,7 @@ class Node:
         """
         self.visits = 1
         self.V = 0.0  # we can reshape the reward function
-        self.history = history# which includes the states and actions
+        self.history = history  # which includes the states and actions
         self.children = []
         self.parent = parent
 

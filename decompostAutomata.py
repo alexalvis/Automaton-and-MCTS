@@ -68,14 +68,19 @@ class automata(object):
         subgrf.setStart(start)
         rank = self.rankDict[start]
         subgrf.addNode(start)
+        avoidList = []
         for end in self.grf[start]:
             if self.rankDict[end] == rank -1:
                 target = self.grf[start][end][0]["target"]
                 distance = self.grf[start][end][0]["distance"]
                 subgrf.addEdge(start, end, target, distance)
                 subgrf.addTerminal(end)
+            else:
+                target = self.grf[start][end][0]["target"]
+                avoidList.append(target)
+
         subgrf.getRankDict()
-        return subgrf
+        return subgrf, avoidList
 
     def transfer(self, start, state):
         for dst in self.grf[start]:
@@ -88,11 +93,13 @@ class automata(object):
     def decomposeAll(self):
         ##decompose to get all possible subautomata
         grfList = []
+        avoidList = []
         for node in self.grf:
             if self.rankDict[node] != 0:
-                tempsub = self.getsubAutomata(node)
+                tempsub, tempavoidList = self.getsubAutomata(node)
                 grfList.append(tempsub)
-        return grfList
+                avoidList.append(tempavoidList)
+        return grfList, avoidList
 
 def test():
     auto = automata()
@@ -106,6 +113,8 @@ def test():
     auto.addEdge(0,2,(6,3),1)
     auto.addEdge(1,3,(9,1),1)
     auto.addEdge(2,3,(9,9),1)
+    auto.addEdge(1,2,(6,3),1)
+    auto.addEdge(2,1,(6,7),1)
     auto.getRankDict()
     # print(auto.rankDict)
     # print(auto.grf[0])
@@ -136,12 +145,14 @@ if __name__ == "__main__":
     #     print (node)
     auto = test()
     # print(auto.rankDict
-    autoList = auto.decomposeAll()
+    autoList, avoidList = auto.decomposeAll()
     auto_1 = auto.getsubAutomata(0)
     auto_2 = auto.getsubAutomata(1)
     auto_3 = auto.getsubAutomata(2)
-    for temp in autoList:
-        resTarget, resDist = preprocess.analyse(temp)
+    # print(avoidList)
+    for i in range(len(autoList)):
+        resTarget, resDist = preprocess.analyse(autoList[i])
+        print(avoidList[i])
         print(resTarget)
         print(resDist)
     print("auto state is:", auto.transfer(0, ((6, 7), (6, 5))))

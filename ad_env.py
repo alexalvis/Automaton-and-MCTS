@@ -19,6 +19,7 @@ class AdversarialEnvironment:
         self.I = tuple(EnvPara.I_ad)
 
         self.A = [tuple(x) for x in EnvPara.A]
+        self.A_full = EnvPara.A_full
         self.S = []  # the state space
         self.O = [tuple(x) for x in EnvPara.O]
         self.P = {}  # the transition probability
@@ -154,6 +155,6 @@ class AdversarialEnvironment:
                 for a in self.A:
                     probs = self.get_neighbors_probs(s, a, neighbors)
                     assert abs(np.sum(probs) - 1) < 1e-5
-        print(" ")
-        print("| Congrats! You are doing an amazing job of initializing the environment!!!")
+        # print(" ")
+        # print("| Congrats! You are doing an amazing job of initializing the environment!!!")
         return True

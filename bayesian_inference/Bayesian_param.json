@@ -2,7 +2,7 @@
   "HEIGHT": 11,
   "WIDTH": 11,
   "A2RANGE": [4, 0, 5, 10],
-  "INITIAL": [0, 5, 6, 7],
+  "INITIAL": [0, 5, 10, 5],
   "GOALS": [[6,3], [6,7], [9,1], [9,9]],
   "Terminal":[[9,1],[9,9]],
   "OBSTACLES": [],

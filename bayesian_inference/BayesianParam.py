@@ -1,0 +1,15 @@
+class BAYESIAN_INFERENCE:
+    HEIGHT = 11
+    WIDTH = 11
+    A2RANGE = [4, 0, 5, 10]
+    GOALS = [[6,3],[6,7],[9,1],[9,9]]
+    TERMINAL = [[9,1],[9,9]]
+    OBSTACLES = []
+    ACTIONS = [[0, 1], [0, -1], [-1, 0], [1, 0]]
+    TRANSITION_PROB1 = 0.0
+    TRANSITION_PROB2 = 0.20
+    REWARD = 1
+    GAMMA = 0.85
+    THRESHOLD = 0.00000001
+    DISTANCETHRESHOLD = 1
+    CATCHREWARD = 100

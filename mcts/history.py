@@ -81,7 +81,9 @@ class History:
         ad_state = h[-2][-1]
 
         "get the ad action according to the policy"
-        ad_a = inference.get_ad_action(current_state)
+        # ad_a = inference.get_ad_action(current_state)
+        # ad_a = inference.get_ad_max_action(current_state)
+        ad_a = inference.get_ad_pursuit_action(current_state)
 
         ad_next_state = self.ad_env.sto_trans(ad_state, ad_a)
 
@@ -94,7 +96,7 @@ class History:
         next_belief = History([new_h, ], self.turn - 1, self.sure_winning_regions, self.ctrl_env, self.ad_env)
         return next_belief
 
-    def terminal(self, terminalState, disp_flag=False):
+    def terminal(self, disp_flag=False):
         """
         Determine the current node.py is the terminal node.py based on the turn of the state
         :return: True, if the current state is in the terminal node.py. False, otherwise.
@@ -109,7 +111,12 @@ class History:
         if self.d is False:
             ad_state = current_state[1]
 
-            if np.linalg.norm(np.array(ctrl_state) - np.array(ad_state), ord=1) <= 1:
+            if ctrl_state == (9, 5):
+                if disp_flag is True:
+                    print(" ")
+                    print("| The system touches true goal!!!")
+                return True
+            elif np.linalg.norm(np.array(ctrl_state) - np.array(ad_state), ord=1) <= 1:
                 if disp_flag is True:
                     print(" ")
                     print("| The system is caught!!!")
@@ -123,12 +130,6 @@ class History:
                 if disp_flag is True:
                     print(" ")
                     print("| The system reaches the maximum levels!!!")
-                return True
-
-            elif ctrl_state in terminalState:
-                if disp_flag is True:
-                    print(" ")
-                    print("| The system touches true goal!!!")
                 return True
 
         return False
@@ -147,13 +148,14 @@ class History:
 
         kl_reward = inference.inference_learning.total_KL  # add the kl divergence
 
-        r += kl_reward
+        # add KL
+        # r += kl_reward
 
-        # "if the joint state is the in the sure_winning_regions, it will have the reward."
+        "if the joint state is the in the sure_winning_regions, it will have the reward."
         if ctrl_state + ad_state in self.sure_winning_regions:
             r += 100
 
-        # if ctrl_state == (6, 3) or ctrl_state == (6, 7) and np.linalg.norm(np.array(ctrl_state) - np.array(ad_state), ord=1) > 1:
+        # if ctrl_state == (9, 5):
         #     r += 100
 
         return r

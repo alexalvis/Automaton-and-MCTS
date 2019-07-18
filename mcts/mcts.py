@@ -24,8 +24,9 @@ class MonteCarloTreeSearch:
 
     def reset_tree(self):
         self.pi = {}
+        self.inference = None
 
-    def uct_search(self, budget, root, targetState, disp_flag=False):
+    def uct_search(self, budget, root, disp_flag=False):
         """
         Monte Carlo Tree Search with UCB (Upper confidence Bound) tree selection policy
         :param budget: given the computational resource
@@ -34,17 +35,17 @@ class MonteCarloTreeSearch:
         """
         inference = Inference()
         win = 0
-        limit = ARG.iterations - 1000     #1000 here
+        limit = ARG.iterations - 1000
         for k in range(int(budget)):  # simulate within computational budget
             if disp_flag is True:
                 print(" ")
                 print("This is the ", k, "th iterations")
 
-            inference.reset_inference(root.history.value[0], root.history.d)    #value[0] is the ctrl_state,
+            inference.reset_inference(root.history.value[0])
 
-            inference, front = self.tree_policy(root, targetState, inference)
+            inference, front = self.tree_policy(root, inference)
 
-            inference, reward = self.default_policy(front.history, targetState, inference)
+            inference, reward = self.default_policy(front.history, inference)
 
             if k > limit and reward > 99:
                 win += 1
@@ -54,7 +55,7 @@ class MonteCarloTreeSearch:
             inference.record_reward(reward)
 
         print(' ')
-        print(" After", limit, "simulation, the winning rate is: ", win / (int(k) - limit))
+        print(" After", limit, "simulation, the winning rate is: ", win / (int(k) - limit - 1))
 
         # plt.rcParams.update({'font.size': 18})
         # plt.figure()
@@ -67,21 +68,21 @@ class MonteCarloTreeSearch:
 
         return self.best_child(root, 0, inference)
 
-    def tree_policy(self, node, targetState, inference):
+    def tree_policy(self, node, inference):
         """
         Select or create a leaf node from the nodes already contained within the search tree (selection and expansion)
         :param node: the root node
         :return: the last node reached during the tree policy
         """
         "If the state is not false"
-        while node.history.terminal(targetState) is False:
+        while node.history.terminal() is False:
             if node.fully_expanded() is False:
                 child_node = self.expand(node, inference)
-                inference.update_traj(child_node.history.value[0], child_node.history.d)
+                inference.update_traj(inference.get_states_seq(child_node.history.value[0]))
                 return inference, child_node
             else:
                 new_node = self.best_child(node, ARG.SCALAR, inference)
-                inference.update_traj(new_node.history.value[0], new_node.history.d)
+                inference.update_traj(inference.get_states_seq(new_node.history.value[0]))
                 node = new_node
         return inference, node
 
@@ -109,7 +110,6 @@ class MonteCarloTreeSearch:
         :return: the best child of the current node.
         """
         best_score = -np.Inf
-        scores = []     ##619
         if node.history.d is False:
             best_children = []
             for c in node.children:
@@ -117,7 +117,6 @@ class MonteCarloTreeSearch:
                 exploit = c.V / c.visits
                 explore = np.sqrt(2.0 * np.log(node.visits) / float(c.visits))
                 score = exploit + scalar * explore
-                scores.append(score)     ##619
                 if score == best_score:
                     best_children.append(c)
                 if score > best_score:
@@ -125,7 +124,6 @@ class MonteCarloTreeSearch:
                     best_score = score
             if len(best_children) == 0:
                 Warning("OOPS: no best child found, probably fatal")
-            # self.store_policy(scores,node)
             return np.random.choice(best_children)
         else:
             best_child = None
@@ -133,7 +131,10 @@ class MonteCarloTreeSearch:
             current_state = h[-2]
 
             current_ad_state = current_state[1]
-            ad_action = inference.get_ad_action(current_state)
+            # ad_action = inference.get_ad_action(current_state)
+            # ad_action = inference.get_ad_max_action(current_state)
+            ad_action = inference.get_ad_pursuit_action(current_state)
+
             next_ad_state = self.ad_env.sto_trans(current_ad_state, ad_action)
 
             for c in node.children:
@@ -142,7 +143,6 @@ class MonteCarloTreeSearch:
 
             if best_child is None:
                 return c
-
             return best_child
 
     def store_policy(self, scores, node):
@@ -156,13 +156,13 @@ class MonteCarloTreeSearch:
             self.pi[list(scores.keys())[iter], tuple(node.history.joint_traj)] = probs[iter]
 
     @staticmethod
-    def default_policy(history, targetState, inference):
+    def default_policy(history, inference):
         """
         The default policy is the random policy
         """
-        while history.terminal(targetState) is False:
+        while history.terminal() is False:
             history = history.sample(inference)
-            inference.update_traj(history.value[0], history.d)
+            inference.update_traj(inference.get_states_seq(history.value[0]))
 
         return inference, history.reward(inference)
 
